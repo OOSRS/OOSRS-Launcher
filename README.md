@@ -10,17 +10,19 @@ A compact 480 × 264 window with a slate-and-blue finish, a draggable header, an
 
 ## Start
 
-Install **Java 11 or newer**, download the release JAR, then open it with Java. Both the launcher and client run directly on Java 11.
+Install **Java 11 or newer** to open the launcher JAR, then download and open the release. The launcher runs the client with its own verified Java 11 runtime.
 
 ```sh
-java -jar openosrs-launcher-1.0.3.jar
+java -jar openosrs-launcher-1.0.4.jar
 ```
 
 Select **Launch OpenOSRS**. No GitHub account is needed to download public releases.
 
 The launcher closes automatically once the client confirms successful initialization. The client keeps running. If startup fails or times out, the launcher stays open with the error and access to logs.
 
-The launcher uses the same Java installation to start the client. Java is not downloaded or switched automatically.
+On the first launch, OpenOSRS downloads a pinned Eclipse Temurin Java 11 runtime (about 40 MB). It checks the archive checksum and starts a compatibility probe, including `java.applet.AppletStub`, before launching the client. Later launches reuse this private cache. No administrator access or system Java changes are needed. A failed download can be retried; existing client sessions keep their runtime.
+
+Runtime downloads cover Windows x64, Linux x64/ARM64, macOS Intel/Apple Silicon, and Alpine Linux x64. Windows 11 ARM uses its x64 emulation. A first-time runtime download needs internet access; a verified cached runtime can be reused offline. Other platforms report an unsupported-runtime error.
 
 ## Updates and caching
 
@@ -53,21 +55,21 @@ Use JDK 11:
 
 ```sh
 ./gradlew jar
-java -jar build/libs/openosrs-launcher-1.0.3.jar
+java -jar build/libs/openosrs-launcher-1.0.4.jar
 ```
 
-Windows: use `gradlew.bat`. Native installers and a bundled Java runtime are outside this initial JAR distribution.
+Windows: use `gradlew.bat`. This is a JAR distribution, so Java must already be installed to open the launcher itself. The client runtime is downloaded separately.
 
 For a download-only check without opening the client:
 
 ```sh
-java -jar build/libs/openosrs-launcher-1.0.3.jar --prepare
+java -jar build/libs/openosrs-launcher-1.0.4.jar --prepare
 ```
 
-This fetches release metadata, verifies and caches both artifacts, and exits. `--version` prints the launcher version.
+This fetches release metadata, verifies and caches both artifacts and the client runtime, and exits. Use `--prepare-runtime` to download and check only Java. `--version` prints the launcher version.
 
 ## Release
 
-Increase `version` in `build.gradle.kts`, commit, and push a matching `vX.Y.Z` tag. The release workflow builds the JAR and publishes its update metadata. Client and launcher version numbers are independent.
+Increase `version` in `build.gradle.kts`, commit, and push a matching `vX.Y.Z` tag. The release workflow builds the JAR, checks runtime installation and cache reuse on Windows, Linux and macOS, and publishes its update metadata only after those checks pass. Runtime pins live in `src/main/resources/net/openosrs/launcher/runtimes.properties`. Client and launcher version numbers are independent.
 
 See [LICENSE](LICENSE).

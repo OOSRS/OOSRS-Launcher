@@ -157,7 +157,7 @@ final class Updates
         }
     }
 
-    private static InputStream open(URI uri) throws IOException
+    static InputStream open(URI uri) throws IOException
     {
         for (int redirects = 0; redirects < 6; redirects++)
         {

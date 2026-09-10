@@ -39,6 +39,15 @@ public final class Launcher
         }
         Launcher application = new Launcher();
         Files.createDirectories(application.cache.resolve("logs"));
+        if (List.of(args).contains("--prepare-runtime"))
+        {
+            try (FileChannel channel = application.lockChannel(); FileLock ignored = application.lock(channel))
+            {
+                System.out.println("Client Java: " + ClientRuntime.prepare(application.cache, System.out::println));
+            }
+            application.worker.shutdown();
+            return;
+        }
         if (List.of(args).contains("--prepare"))
         {
             application.updates = new Updates(application.cache, System.out::println);
@@ -51,18 +60,19 @@ public final class Launcher
                     application.updates.remember(release, "current");
                     System.out.println("Verified " + release.version() + ": " + jar);
                 }
+                System.out.println("Client Java: " + ClientRuntime.prepare(application.cache, System.out::println));
             }
             application.worker.shutdown();
             return;
         }
-        if (args.length != 0) { throw new IllegalArgumentException("Usage: java -jar launcher.jar [--version|--prepare]"); }
+        if (args.length != 0) { throw new IllegalArgumentException("Usage: java -jar launcher.jar [--version|--prepare|--prepare-runtime]"); }
         SwingUtilities.invokeLater(application::show);
     }
 
     static String version()
     {
         String value = Launcher.class.getPackage().getImplementationVersion();
-        return value == null ? "1.0.3" : value;
+        return value == null ? "1.0.4" : value;
     }
 
     static String javaExecutable()
@@ -135,10 +145,16 @@ public final class Launcher
             try
             {
                 Path jar;
-                try (FileChannel channel = lockChannel(); FileLock ignored = lock(channel)) { jar = updates.prepare(release); }
+                Path clientJava;
+                try (FileChannel channel = lockChannel(); FileLock ignored = lock(channel))
+                {
+                    jar = updates.prepare(release);
+                    if (release.minimumJava() > 11) { throw new IOException("This client needs a newer launcher runtime. Update the launcher first."); }
+                    clientJava = ClientRuntime.prepare(cache, this::status);
+                }
                 Path log = cache.resolve("logs/client-" + Instant.now().toEpochMilli() + ".log");
                 Path ready = cache.resolve("client-ready-" + java.util.UUID.randomUUID());
-                Process process = new ProcessBuilder(javaExecutable(), "-Duser.home=" + System.getProperty("user.home"),
+                Process process = new ProcessBuilder(clientJava.toString(), "-Duser.home=" + System.getProperty("user.home"),
                     "-Dopenosrs.launcher.ready=" + ready, "-jar", jar.toString())
                     .redirectErrorStream(true).redirectOutput(log.toFile()).start();
                 status("Starting OpenOSRS…");

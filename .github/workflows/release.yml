@@ -9,8 +9,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -26,6 +24,73 @@ jobs:
         with:
           name: oosrs-launcher
           path: release-output/*
+
+  runtime-check:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: oosrs-launcher
+          path: release-output
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Java 11 and confirm cache reuse
+        shell: bash
+        run: |
+          launcher=$(find release-output -name '*.jar' -print -quit)
+          runtime_home="$RUNNER_TEMP/openosrs-runtime-home"
+          java "-Duser.home=$runtime_home" -jar "$launcher" --prepare-runtime
+          java "-Duser.home=$runtime_home" -jar "$launcher" --prepare-runtime | tee runtime-cache.log
+          grep -F 'Using cached Java 11.' runtime-cache.log
+          cat "$runtime_home/.openosrs/launcher/logs/runtime-check.log"
+      - name: Check Windows launcher replacement and restart
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $sourceJar = (Get-ChildItem release-output/*.jar).FullName
+          $checkDir = Join-Path $env:RUNNER_TEMP 'openosrs-self-update'
+          New-Item -ItemType Directory -Force $checkDir | Out-Null
+          $targetJar = Join-Path $checkDir 'launcher.jar'
+          Invoke-WebRequest 'https://github.com/OOSRS/OOSRS-Launcher/releases/download/v1.0.3/openosrs-launcher-1.0.3.jar' -OutFile $targetJar
+          $oldHash = (Get-FileHash $targetJar -Algorithm SHA256).Hash
+          $newHash = (Get-FileHash $sourceJar -Algorithm SHA256).Hash.ToLowerInvariant()
+          $java = Join-Path $env:JAVA_HOME 'bin/java.exe'
+          $old = Start-Process $java -ArgumentList "`"-Duser.home=$checkDir`" -jar `"$targetJar`"" -PassThru
+          Start-Sleep -Seconds 5
+          if ($old.HasExited) { throw 'Old launcher did not stay running' }
+          $helper = Start-Process $java -ArgumentList "`"-Duser.home=$checkDir`" -jar `"$sourceJar`" --apply-update $($old.Id) `"$targetJar`" `"$sourceJar`" $newHash" -PassThru -RedirectStandardError "$checkDir/helper-error.log"
+          Start-Sleep -Seconds 2
+          Stop-Process -Id $old.Id
+          if (!$helper.WaitForExit(70000) -or $helper.ExitCode -ne 0) {
+            Get-Content "$checkDir/helper-error.log"
+            throw 'Launcher update helper failed'
+          }
+          if ((Get-FileHash $targetJar -Algorithm SHA256).Hash.ToLowerInvariant() -ne $newHash) { throw 'Replacement hash mismatch' }
+          if ((Get-FileHash "$targetJar.previous" -Algorithm SHA256).Hash -ne $oldHash) { throw 'Backup hash mismatch' }
+          $restarted = @(Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine.Contains($checkDir) -and $_.CommandLine.Contains($targetJar) })
+          if ($restarted.Count -ne 1) { throw 'Updated launcher was not restarted' }
+          $restarted | ForEach-Object { Stop-Process -Id $_.ProcessId }
+          Write-Output 'Windows launcher replacement, backup and restart passed.'
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, runtime-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: oosrs-launcher
+          path: release-output
       - name: Publish tagged release
         id: release
         if: startsWith(github.ref, 'refs/tags/v')
