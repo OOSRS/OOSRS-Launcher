@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 import java.util.function.Consumer;
 import java.util.jar.JarFile;
 
@@ -66,9 +65,9 @@ final class Updates
 
     Path prepare(Release release) throws IOException
     {
-        if (Runtime.version().feature() != release.javaVersion())
+        if (Runtime.version().feature() < release.minimumJava())
         {
-            throw new IOException("This release needs Java " + release.javaVersion() + ". Install it, then start the launcher with that version.");
+            throw new IOException("This release needs Java " + release.minimumJava() + " or newer. Start the launcher with a supported version.");
         }
         Path destination = path(release);
         if (Files.isRegularFile(destination) && sha256(destination).equals(release.sha256()))
@@ -138,7 +137,13 @@ final class Updates
                 int read;
                 while ((read = input.read(buffer)) != -1) { digest.update(buffer, 0, read); }
             }
-            return HexFormat.of().formatHex(digest.digest());
+            StringBuilder hex = new StringBuilder(64);
+            for (byte value : digest.digest())
+            {
+                hex.append(Character.forDigit((value >>> 4) & 15, 16));
+                hex.append(Character.forDigit(value & 15, 16));
+            }
+            return hex.toString();
         }
         catch (NoSuchAlgorithmException exception) { throw new IllegalStateException(exception); }
     }

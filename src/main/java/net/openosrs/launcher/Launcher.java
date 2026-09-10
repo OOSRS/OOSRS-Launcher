@@ -90,7 +90,7 @@ public final class Launcher
     static String version()
     {
         String value = Launcher.class.getPackage().getImplementationVersion();
-        return value == null ? "1.0.0" : value;
+        return value == null ? "1.0.1" : value;
     }
 
     static String javaExecutable()

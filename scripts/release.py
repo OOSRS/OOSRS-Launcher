@@ -23,6 +23,7 @@ for old in out.iterdir():
 jar = root / f"build/libs/openosrs-launcher-{version}.jar"
 shutil.copy2(jar, out / jar.name)
 digest = hashlib.sha256(jar.read_bytes()).hexdigest()
-(out / "update.properties").write_text(f"version={version}\nasset={jar.name}\nsha256={digest}\njava=21\n")
+# Keep the legacy field so launcher 1.0.0 can install this update on Java 21.
+(out / "update.properties").write_text(f"version={version}\nasset={jar.name}\nsha256={digest}\njava=21\nminimumJava=11\n")
 (out / "SHA256SUMS").write_text("".join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in sorted(out.iterdir()) if p.is_file()))
 print(f"Prepared OpenOSRS Launcher {version}: {out}")

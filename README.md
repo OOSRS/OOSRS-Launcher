@@ -8,7 +8,7 @@ A small desktop launcher for OpenOSRS. Separate updates for the launcher and cli
 
 ## Start
 
-Install **Java 21**, download the release JAR, then open it with Java. The launcher can start under **Java 11 or newer** and automatically selects an installed Java 21 runtime. Your system's default Java does not need to change.
+Install **Java 11 or newer**, download the release JAR, then open it with Java. Both the launcher and client run directly on Java 11.
 
 ```sh
 java -jar openosrs-launcher-1.0.1.jar
@@ -16,13 +16,14 @@ java -jar openosrs-launcher-1.0.1.jar
 
 Select **Launch OpenOSRS**. No GitHub account is needed to download public releases.
 
-Java 21 is the runtime used for this client release. If it is installed outside the standard Java folders, set `OPENOSRS_JAVA_HOME` to its installation folder. A missing runtime produces a readable error instead of a class-version crash. Java is not downloaded automatically.
+The launcher uses the same Java installation to start the client. Java is not downloaded or switched automatically.
 
 ## Updates and caching
 
 - Client updates come from `OOSRS/OOSRS` releases.
 - Launcher updates come from `OOSRS/OOSRS-Launcher` releases.
 - Each channel publishes a small `update.properties` file naming the versioned JAR, SHA-256, and required Java version.
+- `minimumJava` is the minimum supported runtime. The legacy `java=21` field remains so launcher 1.0.0 can still self-update; current launchers use `minimumJava=11`.
 - Files download into temporary storage. The launcher verifies the digest and JAR before making it available.
 - Verified versions remain under `~/.openosrs/launcher/`. Repeated launches reuse them.
 - When an update check fails, a verified cached client can still be selected. A known incompatible game revision is not selected as fallback.

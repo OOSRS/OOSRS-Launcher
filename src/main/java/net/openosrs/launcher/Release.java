@@ -6,8 +6,34 @@ import java.net.URI;
 import java.util.Properties;
 
 /** The public, versioned contract between a GitHub release and the launcher. */
-record Release(String repository, String version, String asset, String sha256, int revision, int javaVersion)
+final class Release
 {
+    private final String repository;
+    private final String version;
+    private final String asset;
+    private final String sha256;
+    private final int revision;
+    private final int javaVersion;
+    private final int minimumJava;
+
+    private Release(String repository, String version, String asset, String sha256, int revision, int javaVersion, int minimumJava)
+    {
+        this.repository = repository;
+        this.version = version;
+        this.asset = asset;
+        this.sha256 = sha256;
+        this.revision = revision;
+        this.javaVersion = javaVersion;
+        this.minimumJava = minimumJava;
+    }
+
+    String repository() { return repository; }
+    String version() { return version; }
+    String asset() { return asset; }
+    String sha256() { return sha256; }
+    int revision() { return revision; }
+    int minimumJava() { return minimumJava; }
+
     static Release read(String repository, InputStream input) throws IOException
     {
         Properties values = new Properties();
@@ -30,11 +56,13 @@ record Release(String repository, String version, String asset, String sha256, i
             }
             int revision = Integer.parseInt(values.getProperty("revision", "0"));
             int javaVersion = Integer.parseInt(required(values, "java"));
-            if (javaVersion < 21 || javaVersion > 99 || (kind.equals("client") && revision < 1))
+            int minimumJava = Integer.parseInt(values.getProperty("minimumJava", Integer.toString(javaVersion)));
+            if (javaVersion < 11 || javaVersion > 99 || minimumJava < 11 || minimumJava > javaVersion
+                || (kind.equals("client") && revision < 1))
             {
                 throw new IOException("The release compatibility information is invalid.");
             }
-            return new Release(repository, version, asset, sha, revision, javaVersion);
+            return new Release(repository, version, asset, sha, revision, javaVersion, minimumJava);
         }
         catch (IllegalArgumentException exception)
         {
@@ -55,6 +83,7 @@ record Release(String repository, String version, String asset, String sha256, i
         values.setProperty("sha256", sha256);
         values.setProperty("revision", Integer.toString(revision));
         values.setProperty("java", Integer.toString(javaVersion));
+        values.setProperty("minimumJava", Integer.toString(minimumJava));
         return values;
     }
 
