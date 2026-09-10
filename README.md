@@ -8,13 +8,15 @@ A small desktop launcher for OpenOSRS. Separate updates for the launcher and cli
 
 ## Start
 
-Install **Java 21**, download the release JAR, then open it with Java:
+Install **Java 21**, download the release JAR, then open it with Java. The launcher can start under **Java 11 or newer** and automatically selects an installed Java 21 runtime. Your system's default Java does not need to change.
 
 ```sh
-java -jar openosrs-launcher-1.0.0.jar
+java -jar openosrs-launcher-1.0.1.jar
 ```
 
 Select **Launch OpenOSRS**. No GitHub account is needed to download public releases.
+
+Java 21 is the runtime used for this client release. If it is installed outside the standard Java folders, set `OPENOSRS_JAVA_HOME` to its installation folder. A missing runtime produces a readable error instead of a class-version crash. Java is not downloaded automatically.
 
 ## Updates and caching
 
@@ -46,7 +48,7 @@ Use JDK 21:
 
 ```sh
 ./gradlew jar
-java -jar build/libs/openosrs-launcher-1.0.0.jar
+java -jar build/libs/openosrs-launcher-1.0.1.jar
 ```
 
 Windows: use `gradlew.bat`. Native installers and a bundled Java runtime are outside this initial JAR distribution.
@@ -54,7 +56,7 @@ Windows: use `gradlew.bat`. Native installers and a bundled Java runtime are out
 For a download-only check without opening the client:
 
 ```sh
-java -jar build/libs/openosrs-launcher-1.0.0.jar --prepare
+java -jar build/libs/openosrs-launcher-1.0.1.jar --prepare
 ```
 
 This fetches release metadata, verifies and caches both artifacts, and exits. `--version` prints the launcher version.
