@@ -1,0 +1,11 @@
+.gradle/
+build/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.log
+.idea/
+.env*
+*.key
+*.pem
+.DS_Store
