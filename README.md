@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/openosrs-launcher.svg" alt="OpenOSRS Launcher" width="920"></p>
+<p align="center"><img src="docs/logo.png" alt="OpenOSRS" width="128"></p>
 
 <p align="center"><a href="https://github.com/OOSRS/OOSRS-Launcher/releases/latest">Download</a> · <a href="https://github.com/OOSRS/OOSRS">Client source</a> · <a href="#build">Build</a></p>
 
@@ -6,12 +6,14 @@
 
 A small desktop launcher for OpenOSRS. Separate updates for the launcher and client. Verified downloads. A reusable local cache. Clear startup errors.
 
+A compact 480 × 264 window with a slate-and-blue finish, a draggable header, and one main launch action. Updates and logs stay within reach. Keyboard focus and wrapped error messages remain visible.
+
 ## Start
 
 Install **Java 11 or newer**, download the release JAR, then open it with Java. Both the launcher and client run directly on Java 11.
 
 ```sh
-java -jar openosrs-launcher-1.0.1.jar
+java -jar openosrs-launcher-1.0.2.jar
 ```
 
 Select **Launch OpenOSRS**. No GitHub account is needed to download public releases.
@@ -45,11 +47,11 @@ If startup takes more than 90 seconds, the client is left running for inspection
 
 ## Build
 
-Use JDK 21:
+Use JDK 11:
 
 ```sh
 ./gradlew jar
-java -jar build/libs/openosrs-launcher-1.0.1.jar
+java -jar build/libs/openosrs-launcher-1.0.2.jar
 ```
 
 Windows: use `gradlew.bat`. Native installers and a bundled Java runtime are outside this initial JAR distribution.
@@ -57,7 +59,7 @@ Windows: use `gradlew.bat`. Native installers and a bundled Java runtime are out
 For a download-only check without opening the client:
 
 ```sh
-java -jar build/libs/openosrs-launcher-1.0.1.jar --prepare
+java -jar build/libs/openosrs-launcher-1.0.2.jar --prepare
 ```
 
 This fetches release metadata, verifies and caches both artifacts, and exits. `--version` prints the launcher version.

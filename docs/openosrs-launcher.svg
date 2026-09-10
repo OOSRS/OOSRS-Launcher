@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340"><rect width="1200" height="340" rx="24" fill="#0f171b"/><path d="M910 0h290v340H700z" fill="#18252a"/><path d="M1090 40l64 112-64 112-64-112z" fill="none" stroke="#6ae7b1" stroke-width="3"/><path d="M970 108l36 63-36 63-36-63z" fill="none" stroke="#3e8167" stroke-width="2"/><text x="64" y="80" font-family="sans-serif" font-size="14" letter-spacing="4" fill="#6ae7b1">YOUR CLIENT. YOUR PLUGINS.</text><text x="60" y="185" font-family="sans-serif" font-size="80" font-weight="700" fill="#e8f1ee">OpenOSRS Launcher</text><text x="64" y="251" font-family="sans-serif" font-size="21" fill="#a6bbb3">Verified updates. Ready when you are.</text><path d="M64 294h80" stroke="#6ae7b1" stroke-width="4"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+<defs><linearGradient id="slate" x2="1" y2="1"><stop stop-color="#222d3a"/><stop offset="1" stop-color="#171e27"/></linearGradient></defs>
+<rect width="1200" height="300" rx="20" fill="url(#slate)"/>
+<text x="56" y="72" font-family="sans-serif" font-size="13" letter-spacing="3" fill="#1688ee">LAUNCHER</text>
+<text x="53" y="159" font-family="sans-serif" font-size="64" font-weight="700" fill="#e9edf0">OpenOSRS</text>
+<text x="56" y="211" font-family="sans-serif" font-size="19" fill="#a5b1c0">A small window. Your next adventure.</text>
+<path d="M56 252h1088" stroke="#354150"/>
+</svg>

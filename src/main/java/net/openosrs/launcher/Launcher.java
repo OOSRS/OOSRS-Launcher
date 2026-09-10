@@ -1,15 +1,6 @@
 package net.openosrs.launcher;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -19,34 +10,15 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executors;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 
 /** A small desktop launcher with independent client and launcher release channels. */
 public final class Launcher
 {
-    private static final Color BACKGROUND = new Color(15, 23, 27);
-    private static final Color SURFACE = new Color(24, 37, 42);
-    private static final Color ACCENT = new Color(106, 231, 177);
-    private static final Color TEXT = new Color(232, 241, 238);
     private final Path cache = Path.of(System.getProperty("user.home"), ".openosrs", "launcher");
     private final java.util.concurrent.ExecutorService worker = Executors.newSingleThreadExecutor();
-    private JFrame frame;
-    private JLabel status;
-    private JLabel versions;
-    private JButton launch;
-    private JButton check;
-    private JButton selfUpdate;
-    private JProgressBar progress;
+    private LauncherWindow window;
     private Updates updates;
     private volatile Release clientRelease;
     private volatile Release launcherRelease;
@@ -90,7 +62,7 @@ public final class Launcher
     static String version()
     {
         String value = Launcher.class.getPackage().getImplementationVersion();
-        return value == null ? "1.0.1" : value;
+        return value == null ? "1.0.2" : value;
     }
 
     static String javaExecutable()
@@ -100,69 +72,8 @@ public final class Launcher
 
     private void show()
     {
-        frame = new JFrame("OpenOSRS Launcher");
-        frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(640, 420));
-        frame.setSize(700, 450);
-        frame.setLocationRelativeTo(null);
-        JPanel content = new JPanel(new BorderLayout(0, 24));
-        content.setBackground(BACKGROUND);
-        content.setBorder(BorderFactory.createEmptyBorder(30, 34, 28, 34));
-        JPanel heading = new JPanel();
-        heading.setOpaque(false);
-        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
-        JLabel eyebrow = label("YOUR CLIENT. YOUR PLUGINS.", 11, ACCENT);
-        JLabel title = label("OpenOSRS", 42, TEXT);
-        title.setFont(title.getFont().deriveFont(Font.BOLD));
-        heading.add(eyebrow);
-        heading.add(Box.createVerticalStrut(10));
-        heading.add(title);
-        heading.add(Box.createVerticalStrut(8));
-        heading.add(label("Ready for your next session.", 16, new Color(150, 174, 167)));
-        content.add(heading, BorderLayout.NORTH);
-
-        JPanel card = new JPanel(new BorderLayout(0, 16));
-        card.setBackground(SURFACE);
-        card.setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
-        versions = label("Launcher " + version(), 13, TEXT);
-        status = label("Checking for updates…", 13, new Color(166, 187, 179));
-        progress = new JProgressBar();
-        progress.setForeground(ACCENT);
-        progress.setBackground(BACKGROUND);
-        progress.setBorderPainted(false);
-        progress.setPreferredSize(new Dimension(400, 4));
-        card.add(versions, BorderLayout.NORTH);
-        card.add(status, BorderLayout.CENTER);
-        card.add(progress, BorderLayout.SOUTH);
-        content.add(card, BorderLayout.CENTER);
-
-        JPanel actions = new JPanel();
-        actions.setOpaque(false);
-        actions.setLayout(new BoxLayout(actions, BoxLayout.X_AXIS));
-        JButton logs = button("Logs", false);
-        logs.addActionListener(event -> openLogs());
-        check = button("Check updates", false);
-        check.addActionListener(event -> refresh());
-        selfUpdate = button("Update launcher", false);
-        selfUpdate.setVisible(false);
-        selfUpdate.addActionListener(event -> updateLauncher());
-        launch = button("Launch OpenOSRS", true);
-        launch.setEnabled(false);
-        launch.addActionListener(event -> startClient());
-        actions.add(logs);
-        actions.add(Box.createHorizontalStrut(8));
-        actions.add(check);
-        actions.add(Box.createHorizontalStrut(8));
-        actions.add(selfUpdate);
-        actions.add(Box.createHorizontalGlue());
-        actions.add(launch);
-        content.add(actions, BorderLayout.SOUTH);
-        frame.setContentPane(content);
-        frame.addWindowListener(new WindowAdapter()
-        {
-            @Override public void windowClosed(WindowEvent event) { worker.shutdown(); }
-        });
-        frame.setVisible(true);
+        window = new LauncherWindow(this::startClient, this::refresh, this::updateLauncher, this::openLogs, worker::shutdown);
+        window.setVisible(true);
         refresh();
     }
 
@@ -208,7 +119,7 @@ public final class Launcher
                 }
                 clientRelease = selected;
                 status(notice);
-                SwingUtilities.invokeLater(() -> versions.setText("Client " + clientRelease.version() + "  ·  Revision " + clientRelease.revision() + "  ·  Launcher " + version()));
+                SwingUtilities.invokeLater(() -> window.setClientVersion(clientRelease.version(), clientRelease.revision()));
             }
             catch (Exception exception) { clientRelease = null; error(exception); }
             finally { SwingUtilities.invokeLater(() -> busy(false)); }
@@ -296,18 +207,16 @@ public final class Launcher
 
     private void busy(boolean value)
     {
-        progress.setIndeterminate(value);
-        check.setEnabled(!value);
-        launch.setEnabled(!value && clientRelease != null);
-        selfUpdate.setEnabled(!value);
-        selfUpdate.setVisible(launcherRelease != null && Release.compareVersions(launcherRelease.version(), version()) > 0);
+        window.setBusy(value, clientRelease != null,
+            launcherRelease != null && Release.compareVersions(launcherRelease.version(), version()) > 0);
     }
 
-    private void status(String message) { SwingUtilities.invokeLater(() -> status.setText(message)); }
+    private void status(String message) { SwingUtilities.invokeLater(() -> window.setStatus(message, false)); }
     private void error(Exception exception)
     {
         log(exception);
-        status(exception.getMessage() == null ? "Launch failed. Open Logs for details." : exception.getMessage());
+        SwingUtilities.invokeLater(() -> window.setStatus(
+            exception.getMessage() == null ? "Launch failed. Open Logs for details." : exception.getMessage(), true));
     }
 
     private void log(Exception exception)
@@ -323,25 +232,7 @@ public final class Launcher
     private void openLogs()
     {
         try { Desktop.getDesktop().open(cache.resolve("logs").toFile()); }
-        catch (Exception exception) { JOptionPane.showMessageDialog(frame, cache.resolve("logs").toString(), "OpenOSRS logs", JOptionPane.INFORMATION_MESSAGE); }
+        catch (Exception exception) { JOptionPane.showMessageDialog(window, cache.resolve("logs").toString(), "OpenOSRS logs", JOptionPane.INFORMATION_MESSAGE); }
     }
 
-    private static JLabel label(String text, int size, Color color)
-    {
-        JLabel label = new JLabel(text);
-        label.setForeground(color);
-        label.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, size));
-        return label;
-    }
-
-    private static JButton button(String title, boolean primary)
-    {
-        JButton button = new JButton(title);
-        button.setBackground(primary ? ACCENT : SURFACE);
-        button.setForeground(primary ? BACKGROUND : TEXT);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
-        button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        return button;
-    }
 }
