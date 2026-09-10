@@ -62,7 +62,7 @@ public final class Launcher
     static String version()
     {
         String value = Launcher.class.getPackage().getImplementationVersion();
-        return value == null ? "1.0.2" : value;
+        return value == null ? "1.0.3" : value;
     }
 
     static String javaExecutable()
@@ -155,9 +155,9 @@ public final class Launcher
                         throw new IOException("Client startup has not completed yet. Its window remains open; check Logs before retrying.");
                     }
                     try (FileChannel channel = lockChannel(); FileLock ignored = lock(channel)) { updates.remember(release, "good"); }
-                    status("OpenOSRS is running. You can close this launcher.");
                 }
                 finally { Files.deleteIfExists(ready); }
+                SwingUtilities.invokeLater(window::dispose);
             }
             catch (Exception exception) { error(exception); }
             finally { SwingUtilities.invokeLater(() -> busy(false)); }
