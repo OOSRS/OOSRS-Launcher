@@ -4,6 +4,12 @@
 
 # OpenOSRS Launcher
 
+<p align="center">
+  <a href="https://discord.gg/KKPUeeqgn9"><img src="https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?style=for-the-badge&amp;logo=discord&amp;logoColor=white" alt="Join the OpenOSRS Discord community"></a>
+</p>
+
+Join our [Discord community](https://discord.gg/KKPUeeqgn9) for release news, launcher help, plugin development, and community showcases.
+
 A small desktop launcher for OpenOSRS. Separate updates for the launcher and client. Verified downloads. A reusable local cache. Clear startup errors.
 
 A compact 480 × 264 window with a slate-and-blue finish, a draggable header, and one main launch action. Updates and logs stay within reach. Keyboard focus and wrapped error messages remain visible.
